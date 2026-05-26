@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ekstraktor katalogu kabli</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#0d0d0d; --surface:#1a1a1a; --surface2:#222; --border:#333;
+  --accent:#f5a623; --copper:#b87333; --text:#f0f0f0; --muted:#888;
+  --green:#2ecc71; --red:#e74c3c; --r:12px;
+}
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; min-height:100vh; padding:20px; }
+.wrap { max-width:720px; margin:0 auto; }
+h1 { font-size:20px; font-weight:700; color:var(--accent); margin-bottom:4px; }
+.sub { font-size:13px; color:var(--muted); margin-bottom:24px; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:18px; margin-bottom:14px; }
+.card-title { font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; font-weight:600; margin-bottom:12px; }
+.drop-zone { border:2px dashed var(--border); border-radius:var(--r); padding:32px; text-align:center; cursor:pointer; transition:border-color 0.2s; }
+.drop-zone:hover, .drop-zone.drag { border-color:var(--accent); background:rgba(245,166,35,0.04); }
+.drop-icon { font-size:40px; margin-bottom:10px; }
+.drop-hint { font-size:14px; font-weight:600; margin-bottom:4px; }
+.drop-sub { font-size:12px; color:var(--muted); }
+input[type=text], input[type=password], input[type=number] {
+  width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text);
+  padding:10px 12px; border-radius:8px; font-size:13px; outline:none; margin-bottom:8px;
+}
+input:focus { border-color:var(--accent); }
+label { font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
+.btn { width:100%; padding:13px; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; border:none; }
+.btn-primary { background:var(--accent); color:#000; }
+.btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
+.btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+.progress-wrap { margin:12px 0; display:none; }
+.progress-bar { height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+.progress-fill { height:100%; background:var(--accent); border-radius:4px; transition:width 0.3s; }
+.progress-txt { font-size:12px; color:var(--muted); text-align:center; margin-top:6px; }
+.log { background:var(--surface2); border-radius:8px; padding:12px; font-family:monospace; font-size:11px; color:var(--muted); max-height:200px; overflow-y:auto; line-height:1.8; margin-top:10px; display:none; }
+.log-ok   { color:var(--green); }
+.log-warn { color:var(--accent); }
+.log-err  { color:var(--red); }
+.results { display:none; }
+.stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+.stat-box { background:var(--surface2); border-radius:8px; padding:10px; text-align:center; }
+.stat-val { font-size:22px; font-weight:700; font-family:monospace; color:var(--accent); }
+.stat-lbl { font-size:11px; color:var(--muted); margin-top:2px; }
+.entry-list { max-height:300px; overflow-y:auto; font-size:12px; }
+.entry-row { display:flex; justify-content:space-between; padding:5px 8px; border-bottom:1px solid var(--border); }
+.entry-row:last-child { border-bottom:none; }
+.entry-row:hover { background:rgba(255,255,255,0.03); }
+.entry-type { color:var(--accent); font-family:monospace; font-weight:600; width:120px; flex-shrink:0; }
+.entry-data { color:var(--muted); }
+.entry-cu   { color:var(--copper); font-family:monospace; font-weight:600; width:80px; text-align:right; }
+.tag { display:inline-block; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:600; margin-left:4px; }
+.tag-ok   { background:rgba(46,204,113,0.15); color:var(--green); }
+.tag-warn { background:rgba(245,166,35,0.15); color:var(--accent); }
+.json-preview { background:var(--surface2); border-radius:8px; padding:12px; font-family:monospace; font-size:11px; color:var(--muted); max-height:200px; overflow:auto; white-space:pre; margin-top:10px; }
+.err-box { background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.3); border-radius:8px; padding:12px; font-size:13px; color:var(--red); margin-top:8px; display:none; }
+.hint-box { background:rgba(245,166,35,0.07); border:1px solid rgba(245,166,35,0.2); border-radius:8px; padding:12px; font-size:12px; color:var(--muted); line-height:1.7; }
+.hint-box strong { color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>&#128196; Ekstraktor katalogu kabli</h1>
+  <p class="sub">Wgraj PDF katalog producenta → narzędzie automatycznie wyciąga dane → pobierasz catalog.json</p>
+
+  <!-- KLUCZ API -->
+  <div class="card">
+    <div class="card-title">Klucz API Anthropic</div>
+    <label>Klucz jest używany tylko lokalnie, nie jest nigdzie wysyłany poza Anthropic API</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-api03-..." oninput="saveKey()">
+    <div id="keyStatus" style="font-size:11px;color:var(--muted)"></div>
+  </div>
+
+  <!-- USTAWIENIA -->
+  <div class="card">
+    <div class="card-title">Ustawienia ekstrakcji</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div>
+        <label>Producent / źródło (do metadanych)</label>
+        <input type="text" id="manufacturer" placeholder="np. Telefonika, NKT, Prysmian">
+      </div>
+      <div>
+        <label>Przetwarzaj co N stron (batch)</label>
+        <input type="number" id="batchSize" value="3" min="1" max="10">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div>
+        <label>Strona startowa</label>
+        <input type="number" id="pageFrom" value="1" min="1">
+      </div>
+      <div>
+        <label>Strona końcowa (0 = wszystkie)</label>
+        <input type="number" id="pageTo" value="0" min="0">
+      </div>
+    </div>
+    <div class="hint-box" style="margin-top:4px">
+      <strong>Wskazówka:</strong> Jeśli katalog ma 140 stron — najpierw przetestuj na stronach 1–10 żeby zobaczyć czy działa. Potem uruchom całość. Koszt: ~0.05–0.15 zł za stronę z tabelami.
+    </div>
+  </div>
+
+  <!-- UPLOAD -->
+  <div class="card">
+    <div class="card-title">Plik PDF</div>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('pdfInput').click()">
+      <div class="drop-icon">&#128196;</div>
+      <div class="drop-hint">Kliknij lub przeciągnij plik PDF</div>
+      <div class="drop-sub" id="dropSub">Katalog producenta kabli — max 200MB</div>
+    </div>
+    <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="loadPDF(event)">
+    <div class="err-box" id="errBox"></div>
+  </div>
+
+  <!-- START -->
+  <div class="card">
+    <button class="btn btn-primary" id="startBtn" onclick="startExtraction()" disabled>
+      &#9654; Rozpocznij ekstrakcję
+    </button>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-txt" id="progressTxt">Przygotowanie...</div>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- WYNIKI -->
+  <div class="card results" id="resultsCard">
+    <div class="card-title">Wyniki ekstrakcji</div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-val" id="statEntries">0</div><div class="stat-lbl">wpisów</div></div>
+      <div class="stat-box"><div class="stat-val" id="statTypes">0</div><div class="stat-lbl">typów kabli</div></div>
+      <div class="stat-box"><div class="stat-val" id="statPages">0</div><div class="stat-lbl">stron</div></div>
+    </div>
+    <div class="entry-list" id="entryList"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-primary" onclick="downloadJSON()" style="flex:2">
+        &#11015; Pobierz catalog.json
+      </button>
+      <button class="btn btn-secondary" onclick="copyJSON()" style="flex:1">
+        &#128203; Kopiuj
+      </button>
+    </div>
+    <div class="json-preview" id="jsonPreview"></div>
+  </div>
+
+</div>
+<script>
+// ── PDF.js setup ──────────────────────────────────────────────────────────────
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── Stan ───────────────────────────────────────────────────────────────────────
+let pdfDoc   = null;
+let catalog  = {};
+let totalExtracted = 0;
+let pagesProcessed = 0;
+
+// ── Klucz API ──────────────────────────────────────────────────────────────────
+function saveKey() {
+  const k = document.getElementById('apiKey').value.trim();
+  localStorage.setItem('anthropic_key', k);
+  const st = document.getElementById('keyStatus');
+  st.textContent = k.startsWith('sk-ant-') ? '✓ Klucz wygląda OK' : k ? '⚠ Klucz powinien zaczynać się od sk-ant-' : '';
+  st.style.color  = k.startsWith('sk-ant-') ? 'var(--green)' : 'var(--accent)';
+  checkReady();
+}
+(function() {
+  const k = localStorage.getItem('anthropic_key') || '';
+  if (k) { document.getElementById('apiKey').value = k; saveKey(); }
+})();
+
+// ── Wczytaj PDF ────────────────────────────────────────────────────────────────
+async function loadPDF(ev) {
+  const file = ev.target.files[0]; if (!file) return;
+  showErr('');
+  logLine('Wczytywanie PDF: ' + file.name + ' (' + (file.size/1024/1024).toFixed(1) + ' MB)...', 'ok');
+  try {
+    const buf = await file.arrayBuffer();
+    pdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
+    const n = pdfDoc.numPages;
+    document.getElementById('dropSub').textContent = '✓ ' + file.name + ' — ' + n + ' stron';
+    document.getElementById('dropZone').style.borderColor = 'var(--green)';
+    document.getElementById('pageFrom').max = n;
+    document.getElementById('pageTo').max  = n;
+    logLine('PDF załadowany: ' + n + ' stron', 'ok');
+    checkReady();
+  } catch(e) {
+    showErr('Błąd wczytywania PDF: ' + e.message);
+    pdfDoc = null; checkReady();
+  }
+}
+
+// ── Drag & drop ────────────────────────────────────────────────────────────────
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type === 'application/pdf') {
+    document.getElementById('pdfInput').files; // can't set directly
+    // Create FileList workaround
+    const dt = new DataTransfer(); dt.items.add(f);
+    document.getElementById('pdfInput').files = dt.files;
+    loadPDF({ target: { files: [f] } });
+  }
+});
+
+function checkReady() {
+  const hasKey = (localStorage.getItem('anthropic_key') || '').startsWith('sk-ant-');
+  const hasPdf = !!pdfDoc;
+  document.getElementById('startBtn').disabled = !(hasKey && hasPdf);
+}
+
+// ── Renderuj stronę PDF do base64 ─────────────────────────────────────────────
+async function renderPageToBase64(pageNum, scale) {
+  scale = scale || 2.0;
+  const page   = await pdfDoc.getPage(pageNum);
+  const vp     = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width  = vp.width;
+  canvas.height = vp.height;
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+  return canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+}
+
+// ── Wyciągnij dane z jednej strony przez Claude ───────────────────────────────
+async function extractFromPage(pageNum, b64, manufacturer) {
+  const key = localStorage.getItem('anthropic_key');
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
+          { type: 'text', text: `Jesteś ekspertem od kabli elektrycznych. Analizujesz stronę ${pageNum} katalogu producenta kabli${manufacturer ? ' (' + manufacturer + ')' : ''}.
+
+Znajdź na tej stronie TABELE z danymi technicznymi kabli. Wyciągnij WSZYSTKIE wiersze tabel.
+
+Dla każdego wiersza wyciągnij:
+- cable_type: typ kabla (np. "YDY", "NYM", "YKY", "LgY")
+- cores: liczba żył (liczba całkowita)
+- cross_section: przekrój żyły w mm² (liczba)
+- cu_kg_km: masa miedzi w kg/km (szukaj kolumn: "masa Cu", "copper weight", "Gewicht Cu", "Cu kg/km")
+- total_kg_km: masa całkowita kabla w kg/km (szukaj: "masa kabla", "total weight", "Gesamtgewicht")
+- outer_diameter: średnica zewnętrzna w mm
+- insulation_type: typ izolacji (PVC/XLPE/EPR/PE/guma)
+- has_filler: czy ma wypełnienie (true/false) — NYM i OWY mają białe wypełnienie
+- is_stranded: czy linka (true) czy drut (false)
+- conductor: Cu lub Al
+
+Jeśli strona NIE zawiera tabel z danymi kabli (np. strona tytułowa, spis treści, opis techniczny) — zwróć pustą tablicę.
+
+Zwróć TYLKO JSON (bez backticks, bez komentarzy):
+{
+  "has_data": true,
+  "entries": [
+    {
+      "cable_type": "YDY",
+      "cores": 3,
+      "cross_section": 2.5,
+      "cu_kg_km": 67.2,
+      "total_kg_km": 155,
+      "outer_diameter": 11.4,
+      "insulation_type": "PVC",
+      "has_filler": false,
+      "is_stranded": false,
+      "conductor": "Cu"
+    }
+  ]
+}` }
+        ]
+      }]
+    })
+  });
+
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error?.message || 'API error ' + resp.status);
+  const raw = data.content.map(b => b.text || '').join('').replace(/```json|```/g,'').trim();
+  return JSON.parse(raw);
+}
+
+// ── Główna ekstrakcja ──────────────────────────────────────────────────────────
+async function startExtraction() {
+  if (!pdfDoc) return;
+  catalog = {};
+  totalExtracted = 0;
+  pagesProcessed = 0;
+
+  const key         = localStorage.getItem('anthropic_key');
+  const manufacturer= document.getElementById('manufacturer').value.trim();
+  const batchSize   = parseInt(document.getElementById('batchSize').value) || 3;
+  const pageFrom    = parseInt(document.getElementById('pageFrom').value) || 1;
+  const pageTo      = parseInt(document.getElementById('pageTo').value) || 0;
+  const totalPages  = pdfDoc.numPages;
+  const endPage     = pageTo > 0 ? Math.min(pageTo, totalPages) : totalPages;
+  const startPage   = Math.max(1, pageFrom);
+  const pagesCount  = endPage - startPage + 1;
+
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('log').style.display = 'block';
+  document.getElementById('resultsCard').style.display = 'none';
+
+  logLine('Start: strony ' + startPage + '–' + endPage + ' (' + pagesCount + ' stron)', 'ok');
+
+  for (let p = startPage; p <= endPage; p++) {
+    const pct = Math.round((p - startPage) / pagesCount * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressTxt').textContent = 'Strona ' + p + ' / ' + endPage + '...';
+
+    try {
+      const b64    = await renderPageToBase64(p, 2.0);
+      const result = await extractFromPage(p, b64, manufacturer);
+
+      if (result.has_data && result.entries && result.entries.length) {
+        let added = 0;
+        for (const e of result.entries) {
+          if (!e.cable_type || !e.cross_section || e.cu_kg_km === undefined) continue;
+          const ctype = e.cable_type.toUpperCase().replace(/[^A-Z0-9]/g,'');
+          if (!catalog[ctype]) {
+            catalog[ctype] = {
+              name: e.cable_type,
+              full: e.cable_type,
+              desc: '',
+              insulation: e.insulation_type || 'PVC',
+              filler: !!e.has_filler,
+              stranded: !!e.is_stranded,
+              conductor: e.conductor || 'Cu',
+              source: manufacturer || 'katalog',
+              entries: []
+            };
+          }
+          // Sprawdź duplikaty (ten sam cores + cs)
+          const exists = catalog[ctype].entries.find(x =>
+            x.cores === e.cores && Math.abs(x.cs - e.cross_section) < 0.01
+          );
+          if (!exists) {
+            const cu_pct = (e.cu_kg_km > 0 && e.total_kg_km > 0)
+              ? parseFloat((e.cu_kg_km / e.total_kg_km * 100).toFixed(1))
+              : 0;
+            catalog[ctype].entries.push({
+              cores: e.cores,
+              cs:    e.cross_section,
+              cu:    e.cu_kg_km,
+              total: e.total_kg_km || 0,
+              od:    e.outer_diameter || 0,
+              cu_pct
+            });
+            added++;
+            totalExtracted++;
+          }
+        }
+        logLine(`Strona ${p}: znaleziono ${result.entries.length} wpisów (+${added} nowych)`, 'ok');
+      } else {
+        logLine(`Strona ${p}: brak tabel`, 'warn');
+      }
+
+    } catch(e) {
+      logLine(`Strona ${p}: BŁĄD — ${e.message}`, 'err');
+      // Poczekaj chwilę przy błędzie API
+      if (e.message.includes('rate') || e.message.includes('529')) {
+        logLine('Przekroczono limit — czekam 10s...', 'warn');
+        await sleep(10000);
+        p--; // Powtórz stronę
+        continue;
+      }
+    }
+
+    // Sortuj entries w każdym typie
+    Object.values(catalog).forEach(c => c.entries.sort((a,b) => a.cs - b.cs || a.cores - b.cores));
+
+    // Pauza między stronami żeby nie przekroczyć limitu API
+    if (p < endPage) await sleep(500);
+    pagesProcessed++;
+
+    // Aktualizuj wyniki na bieżąco
+    updateResults();
+  }
+
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressTxt').textContent = '✓ Gotowe! ' + totalExtracted + ' wpisów z ' + pagesCount + ' stron';
+  document.getElementById('startBtn').disabled = false;
+  logLine('=== KONIEC: ' + totalExtracted + ' wpisów, ' + Object.keys(catalog).length + ' typów kabli ===', 'ok');
+  updateResults();
+}
+
+// ── Renderuj wyniki ────────────────────────────────────────────────────────────
+function updateResults() {
+  const types   = Object.keys(catalog).filter(k => k !== '_meta');
+  const entries = types.reduce((s, k) => s + catalog[k].entries.length, 0);
+  if (!entries) return;
+
+  document.getElementById('resultsCard').style.display = 'block';
+  document.getElementById('statEntries').textContent = entries;
+  document.getElementById('statTypes').textContent   = types.length;
+  document.getElementById('statPages').textContent   = pagesProcessed;
+
+  const list = document.getElementById('entryList');
+  list.innerHTML = types.map(k => {
+    const cat = catalog[k];
+    return cat.entries.map(e => {
+      const hasCuPct = e.cu_pct > 0;
+      return `<div class="entry-row">
+        <span class="entry-type">${cat.name} ${e.cores}×${e.cs}</span>
+        <span class="entry-data">Cu: </span>
+        <span class="entry-cu">${e.cu} kg/km</span>
+        <span class="entry-data" style="margin-left:8px">Ø${e.od}mm</span>
+        <span class="tag ${hasCuPct ? 'tag-ok' : 'tag-warn'}">${hasCuPct ? e.cu_pct.toFixed(1)+'%' : 'brak %'}</span>
+      </div>`;
+    }).join('');
+  }).join('');
+
+  // Dodaj metadane
+  const finalCatalog = {
+    _meta: {
+      version: '3.0',
+      source: document.getElementById('manufacturer').value.trim() || 'katalog producenta',
+      extracted: new Date().toISOString().slice(0,10),
+      tool: 'ekstraktor-kabli',
+      entries_count: entries,
+      types_count: types.length
+    },
+    ...catalog
+  };
+
+  const json = JSON.stringify(finalCatalog, null, 2);
+  document.getElementById('jsonPreview').textContent = json.substring(0, 1500) + (json.length > 1500 ? '\n\n... (skrócono podgląd)' : '');
+  window._finalCatalog = finalCatalog;
+}
+
+// ── Pobierz / kopiuj JSON ──────────────────────────────────────────────────────
+function downloadJSON() {
+  if (!window._finalCatalog) return;
+  const json = JSON.stringify(window._finalCatalog, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'catalog.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+function copyJSON() {
+  if (!window._finalCatalog) return;
+  navigator.clipboard.writeText(JSON.stringify(window._finalCatalog, null, 2));
+  document.getElementById('jsonPreview').style.borderColor = 'var(--green)';
+  setTimeout(() => document.getElementById('jsonPreview').style.borderColor = '', 1500);
+}
+
+// ── Pomocniki ──────────────────────────────────────────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function showErr(msg) {
+  const e = document.getElementById('errBox');
+  e.textContent = msg; e.style.display = msg ? 'block' : 'none';
+}
+function logLine(msg, type) {
+  const log = document.getElementById('log');
+  const cls = type === 'ok' ? 'log-ok' : type === 'err' ? 'log-err' : 'log-warn';
+  log.innerHTML += `<span class="${cls}">[${new Date().toLocaleTimeString('pl-PL')}] ${msg}</span>\n`;
+  log.scrollTop = log.scrollHeight;
+}
+</script>
+</body>
+</html>
