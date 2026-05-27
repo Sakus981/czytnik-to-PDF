@@ -367,7 +367,7 @@ async function startExtraction() {
       const b64    = await renderPageToBase64(p, 2.0);
       const result = await extractFromPage(p, b64, manufacturer);
 
-      if (result.has_data && result.entries && result.entries.length) {
+  if (result.has_data && result.entries && result.entries.length) {
         let added = 0;
         for (const e of result.entries) {
           if (!e.cable_type || !e.cross_section || e.cross_section === null) continue;
@@ -385,10 +385,11 @@ async function startExtraction() {
               conductor: e.conductor || 'Cu',
               source: manufacturer || 'katalog',
               entries: []
+
             };
           }
           // Sprawdź duplikaty (ten sam cores + cs)
-          const exists = catalog[ctype].entries.find(x =>
+         const exists = catalog[ctype].entries.find(x =>
             x.cores === e.cores && Math.abs(x.cs - e.cross_section) < 0.01
           );
           if (!exists) {
@@ -418,8 +419,6 @@ async function startExtraction() {
       if (e.message.includes('rate') || e.message.includes('529')) {
         logLine('Przekroczono limit — czekam 10s...', 'warn');
         await sleep(10000);
-        p--; // Powtórz stronę
-        continue;
       }
     }
 
