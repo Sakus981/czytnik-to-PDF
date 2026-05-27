@@ -232,6 +232,27 @@ async function renderPageToBase64(pageNum, scale) {
 // ── Wyciągnij dane z jednej strony przez Claude ───────────────────────────────
 async function extractFromPage(pageNum, b64, manufacturer) {
   const key = localStorage.getItem('anthropic_key');
+
+  const prompt = `Jesteś ekspertem od kabli elektrycznych. Analizujesz stronę ${pageNum} katalogu${manufacturer ? ' firmy ' + manufacturer : ''}.
+
+WAŻNE — tabele mogą mieć różne formaty kolumn:
+1. Kolumna "Liczba żył x przekrój" lub "NxS" np. "12 x 1,5" — rozbij na cores=12, cross_section=1.5
+2. Kolumna "Indeks miedziowy" lub "Copper content" lub "Cu index" — to jest cu_kg_km (kg/km miedzi)
+3. Kolumna "Masa kabla" lub "Total weight" lub "Gesamtgewicht" — to total_kg_km
+4. Kolumna "Średnica zewnętrzna" lub "Outer diameter" lub "OD" — to outer_diameter w mm
+5. Numer wyrobu / katalogowy — ignoruj, nie wyciągaj
+
+Wyciągnij typ kabla z nagłówka sekcji/tabeli lub opisu (np. "YKY", "NYM", "Nhxh", "LgY").
+
+Dla każdego wiersza tabeli zwróć obiekt. Jeśli wartość nieczytelna lub brak — użyj null.
+
+Jeśli strona nie ma tabel z danymi kabli — zwróć has_data: false i puste entries.
+
+Zwróć TYLKO JSON bez backticks:
+{"has_data":true,"cable_type_default":"YKY","entries":[{"cable_type":"YKY","cores":3,"cross_section":2.5,"cu_kg_km":67.2,"total_kg_km":155,"outer_diameter":11.4,"insulation_type":"PVC","has_filler":false,"is_stranded":false,"conductor":"Cu"}]}
+
+cable_type_default to typ kabla widoczny w nagłówku strony/sekcji (użyj go gdy w wierszach brak nazwy).`;
+
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -242,47 +263,12 @@ async function extractFromPage(pageNum, b64, manufacturer) {
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
+      max_tokens: 4096,
       messages: [{
         role: 'user',
         content: [
           { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
-          { type: 'text', text: `Jesteś ekspertem od kabli elektrycznych. Analizujesz stronę ${pageNum} katalogu producenta kabli${manufacturer ? ' (' + manufacturer + ')' : ''}.
-
-Znajdź na tej stronie TABELE z danymi technicznymi kabli. Wyciągnij WSZYSTKIE wiersze tabel.
-
-Dla każdego wiersza wyciągnij:
-- cable_type: typ kabla (np. "YDY", "NYM", "YKY", "LgY")
-- cores: liczba żył (liczba całkowita)
-- cross_section: przekrój żyły w mm² (liczba)
-- cu_kg_km: masa miedzi w kg/km (szukaj kolumn: "masa Cu", "copper weight", "Gewicht Cu", "Cu kg/km")
-- total_kg_km: masa całkowita kabla w kg/km (szukaj: "masa kabla", "total weight", "Gesamtgewicht")
-- outer_diameter: średnica zewnętrzna w mm
-- insulation_type: typ izolacji (PVC/XLPE/EPR/PE/guma)
-- has_filler: czy ma wypełnienie (true/false) — NYM i OWY mają białe wypełnienie
-- is_stranded: czy linka (true) czy drut (false)
-- conductor: Cu lub Al
-
-Jeśli strona NIE zawiera tabel z danymi kabli (np. strona tytułowa, spis treści, opis techniczny) — zwróć pustą tablicę.
-
-Zwróć TYLKO JSON (bez backticks, bez komentarzy):
-{
-  "has_data": true,
-  "entries": [
-    {
-      "cable_type": "YDY",
-      "cores": 3,
-      "cross_section": 2.5,
-      "cu_kg_km": 67.2,
-      "total_kg_km": 155,
-      "outer_diameter": 11.4,
-      "insulation_type": "PVC",
-      "has_filler": false,
-      "is_stranded": false,
-      "conductor": "Cu"
-    }
-  ]
-}` }
+          { type: 'text', text: prompt }
         ]
       }]
     })
@@ -290,8 +276,62 @@ Zwróć TYLKO JSON (bez backticks, bez komentarzy):
 
   const data = await resp.json();
   if (!resp.ok) throw new Error(data.error?.message || 'API error ' + resp.status);
-  const raw = data.content.map(b => b.text || '').join('').replace(/```json|```/g,'').trim();
-  return JSON.parse(raw);
+
+  const raw = data.content.map(b => b.text || '').join('').trim();
+
+  // Bezpieczny parse — wyciągnij JSON nawet jeśli Claude dodał tekst wokół
+  let jsonStr = raw.replace(/```json|```/g, '').trim();
+
+  // Jeśli JSON jest obcięty — spróbuj naprawić
+  if (!jsonStr.endsWith('}')) {
+    // Znajdź ostatni kompletny obiekt entries
+    const lastComma = jsonStr.lastIndexOf('},');
+    const lastClose = jsonStr.lastIndexOf('}');
+    if (lastComma > 0) {
+      jsonStr = jsonStr.substring(0, lastComma + 1) + ']}';
+    } else if (lastClose > 0) {
+      jsonStr = jsonStr.substring(0, lastClose + 1) + ']}';
+    }
+    // Próba zamknięcia otwartych nawiasów
+    const opens  = (jsonStr.match(/{/g) || []).length;
+    const closes = (jsonStr.match(/}/g) || []).length;
+    for (let i = 0; i < opens - closes; i++) jsonStr += '}';
+    const aopens  = (jsonStr.match(/\[/g) || []).length;
+    const acloses = (jsonStr.match(/\]/g) || []).length;
+    for (let i = 0; i < aopens - acloses; i++) jsonStr += ']';
+  }
+
+  let result;
+  try {
+    result = JSON.parse(jsonStr);
+  } catch(e) {
+    // Ostatnia próba — wyciągnij entries ręcznie
+    logLine('Strona ' + pageNum + ': naprawa JSON...', 'warn');
+    const entriesMatch = jsonStr.match(/"entries"\s*:\s*\[([\s\S]*)/);
+    if (entriesMatch) {
+      try {
+        // Spróbuj wyciągnąć kompletne obiekty
+        const objects = [];
+        const objRegex = /\{[^{}]*\}/g;
+        let m;
+        while ((m = objRegex.exec(entriesMatch[1])) !== null) {
+          try { objects.push(JSON.parse(m[0])); } catch(e2) {}
+        }
+        if (objects.length) return { has_data: true, entries: objects };
+      } catch(e3) {}
+    }
+    throw new Error('JSON parse failed: ' + e.message + ' | raw: ' + raw.substring(0, 100));
+  }
+
+  // Uzupełnij cable_type z cable_type_default jeśli brak w wierszu
+  if (result.cable_type_default && result.entries) {
+    result.entries = result.entries.map(e => ({
+      ...e,
+      cable_type: e.cable_type || result.cable_type_default
+    }));
+  }
+
+  return result;
 }
 
 // ── Główna ekstrakcja ──────────────────────────────────────────────────────────
@@ -330,7 +370,9 @@ async function startExtraction() {
       if (result.has_data && result.entries && result.entries.length) {
         let added = 0;
         for (const e of result.entries) {
-          if (!e.cable_type || !e.cross_section || e.cu_kg_km === undefined) continue;
+          if (!e.cable_type || !e.cross_section || e.cross_section === null) continue;
+          if (e.cu_kg_km === null || e.cu_kg_km === undefined || e.cu_kg_km <= 0) continue;
+          if (!e.cores || e.cores === null || e.cores <= 0) continue;
           const ctype = e.cable_type.toUpperCase().replace(/[^A-Z0-9]/g,'');
           if (!catalog[ctype]) {
             catalog[ctype] = {
@@ -475,3 +517,4 @@ function logLine(msg, type) {
 </script>
 </body>
 </html>
+
