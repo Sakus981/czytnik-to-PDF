@@ -379,15 +379,6 @@ async function startExtraction() {
 
       if (result.has_data && result.entries && result.entries.length) {
         let added = 0, skipped = 0, invalid = 0;
-
-        // DEBUG — pokaż pierwsze 3 wpisy w logu żeby zobaczyć co Claude zwrócił
-        if (result.entries.length > 0) {
-          const sample = result.entries.slice(0, 3).map(e =>
-            `{type:${e.cable_type||'?'} ${e.cores||'?'}x${e.cross_section||'?'} cu:${e.cu_kg_km} tot:${e.total_kg_km}}`
-          ).join(' | ');
-          logLine(`  DEBUG strona ${p}: ${sample}`, 'warn');
-        }
-
         for (const e of result.entries) {
 
           // ── Walidacja danych ──────────────────────────────────────────────
@@ -395,9 +386,9 @@ async function startExtraction() {
           const cs    = parseFloat(e.cross_section);
           const cores = parseInt(e.cores);
           const cu    = parseFloat(e.cu_kg_km);
-          if (!cs || isNaN(cs) || cs <= 0)    { invalid++; logLine(`  INVALID cs: type=${e.cable_type} cs=${e.cross_section} cu=${e.cu_kg_km} cores=${e.cores}`, 'err'); continue; }
-          if (!cores || isNaN(cores) || cores <= 0) { invalid++; logLine(`  INVALID cores: type=${e.cable_type} cs=${e.cross_section} cu=${e.cu_kg_km} cores=${e.cores}`, 'err'); continue; }
-          if (!cu || isNaN(cu) || cu <= 0)    { invalid++; logLine(`  INVALID cu: type=${e.cable_type} cs=${e.cross_section} cu=${e.cu_kg_km} cores=${e.cores}`, 'err'); continue; }
+          if (!cs || isNaN(cs) || cs <= 0)    { invalid++; continue; }
+          if (!cores || isNaN(cores) || cores <= 0) { invalid++; continue; }
+          if (!cu || isNaN(cu) || cu <= 0)    { invalid++; continue; }
 
           // ── Normalizuj klucz typu kabla ───────────────────────────────────
           // Bierz pierwsze słowo z nazwy: "NHXH-J 3x2.5" → "NHXH"
@@ -573,6 +564,4 @@ function logLine(msg, type) {
 </script>
 </body>
 </html>
-
-
 
