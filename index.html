@@ -19,11 +19,11 @@ h1 { font-size:20px; font-weight:700; color:var(--accent); margin-bottom:4px; }
 .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:18px; margin-bottom:14px; }
 .card-title { font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; font-weight:600; margin-bottom:12px; }
 .drop-zone { border:2px dashed var(--border); border-radius:var(--r); padding:32px; text-align:center; cursor:pointer; transition:border-color 0.2s; }
-.drop-zone:hover, .drop-zone.drag { border-color:var(--accent); background:rgba(245,166,35,0.04); }
+.drop-zone:hover,.drop-zone.drag { border-color:var(--accent); background:rgba(245,166,35,0.04); }
 .drop-icon { font-size:40px; margin-bottom:10px; }
 .drop-hint { font-size:14px; font-weight:600; margin-bottom:4px; }
-.drop-sub { font-size:12px; color:var(--muted); }
-input[type=text], input[type=password], input[type=number] {
+.drop-sub  { font-size:12px; color:var(--muted); }
+input[type=text],input[type=password],input[type=number] {
   width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text);
   padding:10px 12px; border-radius:8px; font-size:13px; outline:none; margin-bottom:8px;
 }
@@ -37,26 +37,24 @@ label { font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
 .progress-bar { height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
 .progress-fill { height:100%; background:var(--accent); border-radius:4px; transition:width 0.3s; }
 .progress-txt { font-size:12px; color:var(--muted); text-align:center; margin-top:6px; }
-.log { background:var(--surface2); border-radius:8px; padding:12px; font-family:monospace; font-size:11px; color:var(--muted); max-height:200px; overflow-y:auto; line-height:1.8; margin-top:10px; display:none; }
+.log { background:var(--surface2); border-radius:8px; padding:12px; font-family:monospace; font-size:11px; color:var(--muted); max-height:220px; overflow-y:auto; line-height:1.9; margin-top:10px; display:none; }
 .log-ok   { color:var(--green); }
 .log-warn { color:var(--accent); }
 .log-err  { color:var(--red); }
-.results { display:none; }
 .stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
 .stat-box { background:var(--surface2); border-radius:8px; padding:10px; text-align:center; }
 .stat-val { font-size:22px; font-weight:700; font-family:monospace; color:var(--accent); }
 .stat-lbl { font-size:11px; color:var(--muted); margin-top:2px; }
 .entry-list { max-height:300px; overflow-y:auto; font-size:12px; }
-.entry-row { display:flex; justify-content:space-between; padding:5px 8px; border-bottom:1px solid var(--border); }
+.entry-row { display:flex; justify-content:space-between; align-items:center; padding:5px 8px; border-bottom:1px solid var(--border); gap:6px; }
 .entry-row:last-child { border-bottom:none; }
-.entry-row:hover { background:rgba(255,255,255,0.03); }
-.entry-type { color:var(--accent); font-family:monospace; font-weight:600; width:120px; flex-shrink:0; }
-.entry-data { color:var(--muted); }
-.entry-cu   { color:var(--copper); font-family:monospace; font-weight:600; width:80px; text-align:right; }
-.tag { display:inline-block; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:600; margin-left:4px; }
-.tag-ok   { background:rgba(46,204,113,0.15); color:var(--green); }
-.tag-warn { background:rgba(245,166,35,0.15); color:var(--accent); }
-.json-preview { background:var(--surface2); border-radius:8px; padding:12px; font-family:monospace; font-size:11px; color:var(--muted); max-height:200px; overflow:auto; white-space:pre; margin-top:10px; }
+.entry-type { color:var(--accent); font-family:monospace; font-weight:600; min-width:100px; }
+.entry-cu   { color:var(--copper); font-family:monospace; font-weight:600; min-width:80px; text-align:right; }
+.entry-pct  { font-size:11px; padding:2px 6px; border-radius:4px; font-weight:600; }
+.pct-ok   { background:rgba(46,204,113,0.15); color:var(--green); }
+.pct-est  { background:rgba(245,166,35,0.15); color:var(--accent); }
+.pct-miss { background:rgba(255,255,255,0.07); color:var(--muted); }
+.json-preview { background:var(--surface2); border-radius:8px; padding:12px; font-family:monospace; font-size:11px; color:var(--muted); max-height:180px; overflow:auto; white-space:pre; margin-top:10px; }
 .err-box { background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.3); border-radius:8px; padding:12px; font-size:13px; color:var(--red); margin-top:8px; display:none; }
 .hint-box { background:rgba(245,166,35,0.07); border:1px solid rgba(245,166,35,0.2); border-radius:8px; padding:12px; font-size:12px; color:var(--muted); line-height:1.7; }
 .hint-box strong { color:var(--accent); }
@@ -65,120 +63,122 @@ label { font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
 <body>
 <div class="wrap">
 
-  <h1>&#128196; Ekstraktor katalogu kabli</h1>
-  <p class="sub">Wgraj PDF katalog producenta → narzędzie automatycznie wyciąga dane → pobierasz catalog.json</p>
+<h1>&#128196; Ekstraktor katalogu kabli</h1>
+<p class="sub">Wgraj PDF katalog producenta → narzędzie automatycznie wyciąga dane → pobierasz catalog.json</p>
 
-  <!-- KLUCZ API -->
-  <div class="card">
-    <div class="card-title">Klucz API Anthropic</div>
-    <label>Klucz jest używany tylko lokalnie, nie jest nigdzie wysyłany poza Anthropic API</label>
-    <input type="password" id="apiKey" placeholder="sk-ant-api03-..." oninput="saveKey()">
-    <div id="keyStatus" style="font-size:11px;color:var(--muted)"></div>
-  </div>
+<!-- KLUCZ API -->
+<div class="card">
+  <div class="card-title">Klucz API Anthropic</div>
+  <label>Klucz jest zapisywany lokalnie w przeglądarce, nie jest nigdzie wysyłany poza Anthropic API</label>
+  <input type="password" id="apiKey" placeholder="sk-ant-api03-..." oninput="saveKey()">
+  <div id="keyStatus" style="font-size:11px;color:var(--muted)"></div>
+</div>
 
-  <!-- USTAWIENIA -->
-  <div class="card">
-    <div class="card-title">Ustawienia ekstrakcji</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div>
-        <label>Producent / źródło (do metadanych)</label>
-        <input type="text" id="manufacturer" placeholder="np. Telefonika, NKT, Prysmian">
-      </div>
-      <div>
-        <label>Przetwarzaj co N stron (batch)</label>
-        <input type="number" id="batchSize" value="3" min="1" max="10">
-      </div>
+<!-- USTAWIENIA -->
+<div class="card">
+  <div class="card-title">Ustawienia ekstrakcji</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div>
+      <label>Producent (do metadanych)</label>
+      <input type="text" id="manufacturer" placeholder="np. Technokabel, NKT, Prysmian">
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div>
-        <label>Strona startowa</label>
-        <input type="number" id="pageFrom" value="1" min="1">
-      </div>
-      <div>
-        <label>Strona końcowa (0 = wszystkie)</label>
-        <input type="number" id="pageTo" value="0" min="0">
-      </div>
-    </div>
-    <div class="hint-box" style="margin-top:4px">
-      <strong>Wskazówka:</strong> Jeśli katalog ma 140 stron — najpierw przetestuj na stronach 1–10 żeby zobaczyć czy działa. Potem uruchom całość. Koszt: ~0.05–0.15 zł za stronę z tabelami.
+    <div>
+      <label>Przetwarzaj co N stron równolegle</label>
+      <input type="number" id="batchSize" value="1" min="1" max="3">
     </div>
   </div>
-
-  <!-- UPLOAD -->
-  <div class="card">
-    <div class="card-title">Plik PDF</div>
-    <div class="drop-zone" id="dropZone" onclick="document.getElementById('pdfInput').click()">
-      <div class="drop-icon">&#128196;</div>
-      <div class="drop-hint">Kliknij lub przeciągnij plik PDF</div>
-      <div class="drop-sub" id="dropSub">Katalog producenta kabli — max 200MB</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div>
+      <label>Strona startowa</label>
+      <input type="number" id="pageFrom" value="1" min="1">
     </div>
-    <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="loadPDF(event)">
-    <div class="err-box" id="errBox"></div>
+    <div>
+      <label>Strona końcowa (0 = wszystkie)</label>
+      <input type="number" id="pageTo" value="0" min="0">
+    </div>
   </div>
-
-  <!-- START -->
-  <div class="card">
-    <button class="btn btn-primary" id="startBtn" onclick="startExtraction()" disabled>
-      &#9654; Rozpocznij ekstrakcję
-    </button>
-    <div class="progress-wrap" id="progressWrap">
-      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-      <div class="progress-txt" id="progressTxt">Przygotowanie...</div>
-    </div>
-    <div class="log" id="log"></div>
+  <div class="hint-box" style="margin-top:4px">
+    <strong>Wskazówka:</strong> Najpierw przetestuj strony 7–15 żeby sprawdzić czy działa. Koszt: ~0.05–0.15 zł za stronę z tabelami.
   </div>
+</div>
 
-  <!-- WYNIKI -->
-  <div class="card results" id="resultsCard">
-    <div class="card-title">Wyniki ekstrakcji</div>
-    <div class="stat-grid">
-      <div class="stat-box"><div class="stat-val" id="statEntries">0</div><div class="stat-lbl">wpisów</div></div>
-      <div class="stat-box"><div class="stat-val" id="statTypes">0</div><div class="stat-lbl">typów kabli</div></div>
-      <div class="stat-box"><div class="stat-val" id="statPages">0</div><div class="stat-lbl">stron</div></div>
-    </div>
-    <div class="entry-list" id="entryList"></div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn btn-primary" onclick="downloadJSON()" style="flex:2">
-        &#11015; Pobierz catalog.json
-      </button>
-      <button class="btn btn-secondary" onclick="copyJSON()" style="flex:1">
-        &#128203; Kopiuj
-      </button>
-    </div>
-    <div class="json-preview" id="jsonPreview"></div>
+<!-- UPLOAD -->
+<div class="card">
+  <div class="card-title">Plik PDF</div>
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('pdfInput').click()">
+    <div class="drop-icon">&#128196;</div>
+    <div class="drop-hint">Kliknij lub przeciągnij plik PDF</div>
+    <div class="drop-sub" id="dropSub">Katalog producenta kabli</div>
   </div>
+  <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="loadPDF(event)">
+  <div class="err-box" id="errBox"></div>
+</div>
+
+<!-- START -->
+<div class="card">
+  <button class="btn btn-primary" id="startBtn" onclick="startExtraction()" disabled>
+    &#9654; Rozpocznij ekstrakcję
+  </button>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-txt" id="progressTxt">Przygotowanie...</div>
+  </div>
+  <div class="log" id="log"></div>
+</div>
+
+<!-- WYNIKI -->
+<div class="card" id="resultsCard" style="display:none">
+  <div class="card-title">Wyniki ekstrakcji</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-val" id="statEntries">0</div><div class="stat-lbl">wpisów</div></div>
+    <div class="stat-box"><div class="stat-val" id="statTypes">0</div><div class="stat-lbl">typów kabli</div></div>
+    <div class="stat-box"><div class="stat-val" id="statPages">0</div><div class="stat-lbl">stron</div></div>
+  </div>
+  <div class="entry-list" id="entryList"></div>
+  <div style="display:flex;gap:8px;margin-top:12px">
+    <button class="btn btn-primary" onclick="downloadJSON()" style="flex:2">&#11015; Pobierz catalog.json</button>
+    <button class="btn btn-secondary" onclick="copyJSON()" style="flex:1">&#128203; Kopiuj</button>
+  </div>
+  <div class="json-preview" id="jsonPreview"></div>
+</div>
 
 </div>
 <script>
-// ── PDF.js setup ──────────────────────────────────────────────────────────────
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-// ── Stan ───────────────────────────────────────────────────────────────────────
-let pdfDoc   = null;
-let catalog  = {};
+let pdfDoc = null;
+let catalog = {};
 let totalExtracted = 0;
 let pagesProcessed = 0;
 
-// ── Klucz API ──────────────────────────────────────────────────────────────────
+// ─── KLUCZ API ────────────────────────────────────────────────────────────────
 function saveKey() {
   const k = document.getElementById('apiKey').value.trim();
   localStorage.setItem('anthropic_key', k);
   const st = document.getElementById('keyStatus');
-  st.textContent = k.startsWith('sk-ant-') ? '✓ Klucz wygląda OK' : k ? '⚠ Klucz powinien zaczynać się od sk-ant-' : '';
-  st.style.color  = k.startsWith('sk-ant-') ? 'var(--green)' : 'var(--accent)';
+  if (k.startsWith('sk-ant-')) {
+    st.textContent = '✓ Klucz OK';
+    st.style.color = 'var(--green)';
+  } else if (k) {
+    st.textContent = '⚠ Klucz powinien zaczynać się od sk-ant-';
+    st.style.color = 'var(--accent)';
+  } else {
+    st.textContent = '';
+  }
   checkReady();
 }
-(function() {
+(function initKey() {
   const k = localStorage.getItem('anthropic_key') || '';
   if (k) { document.getElementById('apiKey').value = k; saveKey(); }
 })();
 
-// ── Wczytaj PDF ────────────────────────────────────────────────────────────────
+// ─── WCZYTAJ PDF ──────────────────────────────────────────────────────────────
 async function loadPDF(ev) {
-  const file = ev.target.files[0]; if (!file) return;
+  const file = ev.target.files[0];
+  if (!file) return;
   showErr('');
-  logLine('Wczytywanie PDF: ' + file.name + ' (' + (file.size/1024/1024).toFixed(1) + ' MB)...', 'ok');
+  logLine('Wczytywanie: ' + file.name + ' (' + (file.size/1024/1024).toFixed(1) + ' MB)...', 'ok');
   try {
     const buf = await file.arrayBuffer();
     pdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
@@ -186,42 +186,34 @@ async function loadPDF(ev) {
     document.getElementById('dropSub').textContent = '✓ ' + file.name + ' — ' + n + ' stron';
     document.getElementById('dropZone').style.borderColor = 'var(--green)';
     document.getElementById('pageFrom').max = n;
-    document.getElementById('pageTo').max  = n;
+    document.getElementById('pageTo').max = n;
     logLine('PDF załadowany: ' + n + ' stron', 'ok');
     checkReady();
   } catch(e) {
-    showErr('Błąd wczytywania PDF: ' + e.message);
-    pdfDoc = null; checkReady();
+    showErr('Błąd PDF: ' + e.message);
+    pdfDoc = null;
+    checkReady();
   }
 }
 
-// ── Drag & drop ────────────────────────────────────────────────────────────────
 const dz = document.getElementById('dropZone');
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
 dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
 dz.addEventListener('drop', e => {
   e.preventDefault(); dz.classList.remove('drag');
   const f = e.dataTransfer.files[0];
-  if (f && f.type === 'application/pdf') {
-    document.getElementById('pdfInput').files; // can't set directly
-    // Create FileList workaround
-    const dt = new DataTransfer(); dt.items.add(f);
-    document.getElementById('pdfInput').files = dt.files;
-    loadPDF({ target: { files: [f] } });
-  }
+  if (f) { const dt = new DataTransfer(); dt.items.add(f); document.getElementById('pdfInput').files = dt.files; loadPDF({ target: { files: [f] } }); }
 });
 
 function checkReady() {
-  const hasKey = (localStorage.getItem('anthropic_key') || '').startsWith('sk-ant-');
-  const hasPdf = !!pdfDoc;
-  document.getElementById('startBtn').disabled = !(hasKey && hasPdf);
+  const ok = (localStorage.getItem('anthropic_key') || '').startsWith('sk-ant-') && !!pdfDoc;
+  document.getElementById('startBtn').disabled = !ok;
 }
 
-// ── Renderuj stronę PDF do base64 ─────────────────────────────────────────────
-async function renderPageToBase64(pageNum, scale) {
-  scale = scale || 2.0;
-  const page   = await pdfDoc.getPage(pageNum);
-  const vp     = page.getViewport({ scale });
+// ─── RENDERUJ STRONĘ DO BASE64 ────────────────────────────────────────────────
+async function renderPage(pageNum) {
+  const page = await pdfDoc.getPage(pageNum);
+  const vp   = page.getViewport({ scale: 2.0 });
   const canvas = document.createElement('canvas');
   canvas.width  = vp.width;
   canvas.height = vp.height;
@@ -229,39 +221,41 @@ async function renderPageToBase64(pageNum, scale) {
   return canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
 }
 
-// ── Wyciągnij dane z jednej strony przez Claude ───────────────────────────────
-async function extractFromPage(pageNum, b64, manufacturer) {
+// ─── WYWOŁAJ CLAUDE ───────────────────────────────────────────────────────────
+async function extractPage(pageNum, b64, mfr) {
   const key = localStorage.getItem('anthropic_key');
 
-  const prompt = `Jesteś ekspertem od kabli elektrycznych. Analizujesz stronę ${pageNum} katalogu${manufacturer ? ' firmy ' + manufacturer : ''}.
-
-ZADANIE: Wyciągnij WSZYSTKIE wiersze z tabel z danymi technicznymi kabli.
-
-KLUCZOWE — wyciągaj numer wyrobu (product_id):
-Każdy wiersz w katalogu ma unikalny numer wyrobu (np. "2005 058", "NH-1", "YKY-3x2.5-001").
-Ten numer jest GŁÓWNYM kluczem — jeśli go masz, duplikaty są niemożliwe.
-
-FORMAT KOLUMN (różne katalogi różnie nazywają):
-- "Numer wyrobu" / "Nr wyrobu" / "Symbol" / "Oznaczenie" → product_id (string, wyciągaj dokładnie)
-- "Liczba żył x przekrój" / "NxS" / "n x s" np. "12 x 1,5" → rozbij: cores=12, cross_section=1.5
-  LUB osobne kolumny "Liczba żył"=cores i "Przekrój"=cross_section
-- "Indeks miedziowy" / "Copper content" / "Cu" / "masa Cu" → cu_kg_km [kg/km]
-- "Masa kabla" / "Total weight" / "masa całkowita" → total_kg_km [kg/km]
-- "Średnica zewnętrzna" / "Outer diameter" / "OD" / "śr. zew." → outer_diameter [mm]
-
-TYP KABLA: wyciągnij z nagłówka sekcji/tabeli (np. "NHXH", "YKY", "NYM").
-
-WAŻNE:
-- Wyciągaj KAŻDY wiersz osobno, nawet jeśli typ kabla jest tylko w nagłówku
-- Jeśli brak numeru wyrobu w tabeli — wygeneruj go jako cable_type + "_" + cores + "x" + cross_section
-- Wartości liczbowe: kropka jako separator dziesiętny (1,5 → 1.5)
-- Jeśli strona nie ma tabel z danymi → has_data: false
-
-Zwróć TYLKO JSON bez backticks i bez komentarzy:
-{"has_data":true,"cable_type_default":"NHXH","entries":[
-{"product_id":"2005 058","cable_type":"NHXH","cores":12,"cross_section":1.5,"cu_kg_km":180.0,"total_kg_km":352,"outer_diameter":15.3,"insulation_type":"PVC","has_filler":false,"is_stranded":true,"conductor":"Cu"},
-{"product_id":"2005 009","cable_type":"NHXH","cores":14,"cross_section":1.5,"cu_kg_km":208.8,"total_kg_km":397,"outer_diameter":16.0,"insulation_type":"PVC","has_filler":false,"is_stranded":true,"conductor":"Cu"}
-]}`;
+  const prompt =
+    'Jesteś ekspertem od kabli elektrycznych. Analizujesz stronę ' + pageNum +
+    ' katalogu' + (mfr ? ' firmy ' + mfr : '') + '.\n\n' +
+    'ZADANIE: Wyciągnij KAŻDY wiersz z tabel z danymi technicznymi kabli.\n\n' +
+    '=== FORMATY KOLUMN ===\n\n' +
+    'NUMER WYROBU — zawsze wyciągaj jako product_id:\n' +
+    'Przykłady: "2005 058", "0019 015", "NH-001"\n\n' +
+    'LICZBA ZYL i PRZEKROJ — kilka mozliwych formatow:\n' +
+    '  "3 x 2,5"     -> cores=3,  cross_section=2.5\n' +
+    '  "12 x 1,5"    -> cores=12, cross_section=1.5\n' +
+    '  "1 x 2 x 0,5" -> cores=2,  cross_section=0.5  (1=wiazka, 2=zyly, 0.5=przekroj)\n' +
+    '  "2 x 0,5"     -> cores=2,  cross_section=0.5\n' +
+    '  tylko "1,5"   -> cores=1,  cross_section=1.5  (kabel jednozylowy)\n' +
+    '  UWAGA: cores = liczba zyl (nie liczba wiazek/grup)\n\n' +
+    'MASA MIEDZI (cu_kg_km) — szukaj:\n' +
+    '  "Indeks miedziowy" / "Cu index" / "Copper content" / "masa Cu" / "Cu kg/km"\n\n' +
+    'MASA KABLA (total_kg_km):\n' +
+    '  "Masa kabla" / "Total weight" / "masa calkowita"\n\n' +
+    'SREDNICA ZEWNETRZNA (outer_diameter) [mm]:\n' +
+    '  "Srednica zewnetrzna" / "OD" / "outer diameter"\n\n' +
+    'KABLE JEDNOZYLOWE: jesli tabela nie ma kolumny "liczba zyl" -> cores=1\n' +
+    'Jesli brak kolumny z masa miedzi -> cu_kg_km=null\n' +
+    'Jesli brak danych w wierszu -> null\n' +
+    'Przecinek dziesietary -> kropka: "1,5" -> 1.5\n\n' +
+    'TYP KABLA: wyciagnij z naglowka sekcji/strony.\n\n' +
+    'Jesli strona bez tabel -> has_data:false\n\n' +
+    'Zwroc TYLKO JSON bez backticks:\n' +
+    '{"has_data":true,"cable_type_default":"NHXH","entries":[\n' +
+    '{"product_id":"0019 015","cable_type":"HTKSH","cores":2,"cross_section":0.5,"cu_kg_km":null,"total_kg_km":null,"outer_diameter":null,"insulation_type":"PVC","has_filler":false,"is_stranded":true,"conductor":"Cu"},\n' +
+    '{"product_id":"2005 058","cable_type":"NHXH","cores":12,"cross_section":1.5,"cu_kg_km":180.0,"total_kg_km":352,"outer_diameter":15.3,"insulation_type":"PVC","has_filler":false,"is_stranded":true,"conductor":"Cu"}\n' +
+    ']}';
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -285,120 +279,125 @@ Zwróć TYLKO JSON bez backticks i bez komentarzy:
   });
 
   const data = await resp.json();
-  if (!resp.ok) throw new Error(data.error?.message || 'API error ' + resp.status);
+  if (!resp.ok) throw new Error(data.error && data.error.message ? data.error.message : 'API error ' + resp.status);
 
-  const raw = data.content.map(b => b.text || '').join('').trim();
+  let raw = data.content.map(function(b) { return b.text || ''; }).join('').trim();
+  raw = raw.replace(/```json|```/g, '').trim();
 
-  // Bezpieczny parse — wyciągnij JSON nawet jeśli Claude dodał tekst wokół
-  let jsonStr = raw.replace(/```json|```/g, '').trim();
+  // Napraw obcięty JSON
+  if (!raw.endsWith('}')) {
+    var opens  = (raw.match(/{/g) || []).length;
+    var closes = (raw.match(/}/g) || []).length;
+    var aopens = (raw.match(/\[/g) || []).length;
+    var aclose = (raw.match(/\]/g) || []).length;
 
-  // Jeśli JSON jest obcięty — spróbuj naprawić
-  if (!jsonStr.endsWith('}')) {
-    // Znajdź ostatni kompletny obiekt entries
-    const lastComma = jsonStr.lastIndexOf('},');
-    const lastClose = jsonStr.lastIndexOf('}');
-    if (lastComma > 0) {
-      jsonStr = jsonStr.substring(0, lastComma + 1) + ']}';
-    } else if (lastClose > 0) {
-      jsonStr = jsonStr.substring(0, lastClose + 1) + ']}';
-    }
-    // Próba zamknięcia otwartych nawiasów
-    const opens  = (jsonStr.match(/{/g) || []).length;
-    const closes = (jsonStr.match(/}/g) || []).length;
-    for (let i = 0; i < opens - closes; i++) jsonStr += '}';
-    const aopens  = (jsonStr.match(/\[/g) || []).length;
-    const acloses = (jsonStr.match(/\]/g) || []).length;
-    for (let i = 0; i < aopens - acloses; i++) jsonStr += ']';
+    // Usuń ostatni niepełny obiekt (ucinamy do ostatniego },)
+    var lastOk = raw.lastIndexOf('},');
+    if (lastOk > 0) raw = raw.substring(0, lastOk + 1);
+
+    // Zamknij nawiasy
+    for (var i = 0; i < aopens - aclose - 1; i++) raw += ']';
+    opens  = (raw.match(/{/g) || []).length;
+    closes = (raw.match(/}/g) || []).length;
+    for (var j = 0; j < opens - closes; j++) raw += '}';
   }
 
-  let result;
+  var result;
   try {
-    result = JSON.parse(jsonStr);
-  } catch(e) {
-    // Ostatnia próba — wyciągnij entries ręcznie
-    logLine('Strona ' + pageNum + ': naprawa JSON...', 'warn');
-    const entriesMatch = jsonStr.match(/"entries"\s*:\s*\[([\s\S]*)/);
-    if (entriesMatch) {
-      try {
-        // Spróbuj wyciągnąć kompletne obiekty
-        const objects = [];
-        const objRegex = /\{[^{}]*\}/g;
-        let m;
-        while ((m = objRegex.exec(entriesMatch[1])) !== null) {
-          try { objects.push(JSON.parse(m[0])); } catch(e2) {}
-        }
-        if (objects.length) return { has_data: true, entries: objects };
-      } catch(e3) {}
+    result = JSON.parse(raw);
+  } catch(parseErr) {
+    // Ostateczny fallback — wyciągnij kompletne obiekty wyrażeniem regularnym
+    var objects = [];
+    var objRe = /\{[^{}]*\}/g;
+    var m;
+    while ((m = objRe.exec(raw)) !== null) {
+      try { objects.push(JSON.parse(m[0])); } catch(e2) { /* skip */ }
     }
-    throw new Error('JSON parse failed: ' + e.message + ' | raw: ' + raw.substring(0, 100));
+    if (objects.length > 0) return { has_data: true, entries: objects };
+    throw new Error('Nie udało się sparsować JSON: ' + parseErr.message);
   }
 
-  // Uzupełnij cable_type z cable_type_default jeśli brak w wierszu
+  // Uzupełnij cable_type z cable_type_default
   if (result.cable_type_default && result.entries) {
-    result.entries = result.entries.map(e => ({
-      ...e,
-      cable_type: e.cable_type || result.cable_type_default
-    }));
+    result.entries = result.entries.map(function(e) {
+      return Object.assign({}, e, { cable_type: e.cable_type || result.cable_type_default });
+    });
   }
 
   return result;
 }
 
-// ── Główna ekstrakcja ──────────────────────────────────────────────────────────
+// ─── NORMALIZUJ KLUCZ KATALOGU ────────────────────────────────────────────────
+// "NHXH-J 3x2.5 0.6/1kV" -> "NHXH"
+// "H07V-K" -> "H"  -- to za agresywne, poprawiamy:
+// Bierzemy wszystkie duze litery przed pierwszą cyfrą lub spacja
+function normalizeCtype(raw) {
+  var up = raw.trim().toUpperCase();
+  // Usun polskie znaki
+  up = up.replace(/[ŻŹÓĄĘŚĆŃŁ]/g, '');
+  // Weź pierwsze "słowo" (do spacji, ukośnika, cyfry po literach)
+  // ale zachowaj cyfry WEWNĄTRZ nazwy jak H07, N2XS
+  var parts = up.split(/\s/);
+  var first = parts[0] || up;
+  // Ogranicz długość
+  first = first.replace(/[^A-Z0-9\-]/g, '').substring(0, 15);
+  return first || 'INNY';
+}
+
+// ─── PĘTLA EKSTRAKCJI ─────────────────────────────────────────────────────────
 async function startExtraction() {
-  if (!pdfDoc) return;
   catalog = {};
   totalExtracted = 0;
   pagesProcessed = 0;
 
-  const key         = localStorage.getItem('anthropic_key');
-  const manufacturer= document.getElementById('manufacturer').value.trim();
-  const batchSize   = parseInt(document.getElementById('batchSize').value) || 3;
-  const pageFrom    = parseInt(document.getElementById('pageFrom').value) || 1;
-  const pageTo      = parseInt(document.getElementById('pageTo').value) || 0;
-  const totalPages  = pdfDoc.numPages;
-  const endPage     = pageTo > 0 ? Math.min(pageTo, totalPages) : totalPages;
-  const startPage   = Math.max(1, pageFrom);
-  const pagesCount  = endPage - startPage + 1;
+  var mfr       = document.getElementById('manufacturer').value.trim();
+  var pageFrom  = Math.max(1, parseInt(document.getElementById('pageFrom').value) || 1);
+  var pageTo    = parseInt(document.getElementById('pageTo').value) || 0;
+  var endPage   = pageTo > 0 ? Math.min(pageTo, pdfDoc.numPages) : pdfDoc.numPages;
+  var total     = endPage - pageFrom + 1;
 
   document.getElementById('startBtn').disabled = true;
   document.getElementById('progressWrap').style.display = 'block';
   document.getElementById('log').style.display = 'block';
   document.getElementById('resultsCard').style.display = 'none';
 
-  logLine('Start: strony ' + startPage + '–' + endPage + ' (' + pagesCount + ' stron)', 'ok');
+  logLine('Start: strony ' + pageFrom + '-' + endPage + ' (' + total + ' stron)', 'ok');
 
-  for (let p = startPage; p <= endPage; p++) {
-    const pct = Math.round((p - startPage) / pagesCount * 100);
+  for (var p = pageFrom; p <= endPage; p++) {
+    var pct = Math.round((p - pageFrom) / total * 100);
     document.getElementById('progressFill').style.width = pct + '%';
     document.getElementById('progressTxt').textContent = 'Strona ' + p + ' / ' + endPage + '...';
 
     try {
-      const b64    = await renderPageToBase64(p, 2.0);
-      const result = await extractFromPage(p, b64, manufacturer);
+      var b64    = await renderPage(p);
+      var result = await extractPage(p, b64, mfr);
 
       if (result.has_data && result.entries && result.entries.length) {
-        let added = 0, skipped = 0, invalid = 0;
-        for (const e of result.entries) {
+        var added = 0, skipped = 0, invalid = 0;
 
-          // ── Walidacja danych ──────────────────────────────────────────────
+        for (var ei = 0; ei < result.entries.length; ei++) {
+          var e = result.entries[ei];
+
+          // Walidacja podstawowa
           if (!e.cable_type) { invalid++; continue; }
-          const cs    = parseFloat(e.cross_section);
-          const cores = parseInt(e.cores);
-          const cu    = parseFloat(e.cu_kg_km);
-          if (!cs || isNaN(cs) || cs <= 0)    { invalid++; continue; }
-          if (!cores || isNaN(cores) || cores <= 0) { invalid++; continue; }
-          if (!cu || isNaN(cu) || cu <= 0)    { invalid++; continue; }
 
-          // ── Normalizuj klucz typu kabla ───────────────────────────────────
-          // Bierz pierwsze słowo z nazwy: "NHXH-J 3x2.5" → "NHXH"
-          const ctype = e.cable_type.trim().toUpperCase()
-            .replace(/[ŻŹÓĄĘŚĆŃŁżźóąęśćńł]/g, '')
-            .split(/[\s\-\/\.]/)[0]
-            .replace(/[^A-Z0-9]/g, '')
-            .substring(0, 12) || 'UNKNOWN';
+          var rawCs = String(e.cross_section || '').replace(',', '.');
+          var cs = parseFloat(rawCs);
+          if (!cs || isNaN(cs) || cs <= 0) { invalid++; continue; }
 
-          // ── Utwórz grupę katalogu jeśli nie istnieje ──────────────────────
+          // cores: null -> 1 (jednożyłowy)
+          var cores = parseInt(e.cores);
+          if (!cores || isNaN(cores) || cores <= 0) cores = 1;
+
+          // cu: null -> oblicz geometrycznie
+          var rawCu = parseFloat(e.cu_kg_km);
+          var cuEst = (!rawCu || isNaN(rawCu) || rawCu <= 0);
+          var cu = cuEst ? parseFloat((cs * cores * 8.96).toFixed(2)) : rawCu;
+
+          // Klucz katalogu
+          var ctype = normalizeCtype(e.cable_type);
+
+          // Utwórz grupę
           if (!catalog[ctype]) {
             catalog[ctype] = {
               name:       ctype,
@@ -408,90 +407,95 @@ async function startExtraction() {
               filler:     !!e.has_filler,
               stranded:   !!e.is_stranded,
               conductor:  e.conductor || 'Cu',
-              source:     manufacturer || 'katalog',
+              source:     mfr || 'katalog',
               entries:    []
             };
           }
 
-          // ── Generuj product_id jeśli brak ─────────────────────────────────
-          const pid = (e.product_id || '').toString().trim()
+          // product_id
+          var pid = (e.product_id && String(e.product_id).trim())
             || (ctype + '_' + cores + 'x' + cs);
 
-          // ── DEDUPLIKACJA po product_id (główna) ───────────────────────────
-          const dupById = catalog[ctype].entries.find(x => x.product_id === pid);
+          // Deduplikacja po product_id
+          var dupById = false;
+          for (var di = 0; di < catalog[ctype].entries.length; di++) {
+            if (catalog[ctype].entries[di].product_id === pid) { dupById = true; break; }
+          }
           if (dupById) { skipped++; continue; }
 
-          // ── DEDUPLIKACJA po cores+cs (zabezpieczenie) ─────────────────────
-          // Tylko gdy product_id był wygenerowany (nie z katalogu)
-          const isGenId = !e.product_id;
-          if (isGenId) {
-            const dupByCs = catalog[ctype].entries.find(x =>
-              x.cores === cores && Math.abs(x.cs - cs) < cs * 0.02 + 0.05
-            );
+          // Deduplikacja po cores+cs (gdy brak product_id z katalogu)
+          if (!e.product_id) {
+            var dupByCs = false;
+            for (var di2 = 0; di2 < catalog[ctype].entries.length; di2++) {
+              var x = catalog[ctype].entries[di2];
+              if (x.cores === cores && Math.abs(x.cs - cs) < cs * 0.02 + 0.05) {
+                dupByCs = true; break;
+              }
+            }
             if (dupByCs) { skipped++; continue; }
           }
 
-          // ── Dodaj wpis ────────────────────────────────────────────────────
-          const total  = parseFloat(e.total_kg_km) || 0;
-          const cu_pct = (cu > 0 && total > 0)
-            ? parseFloat((cu / total * 100).toFixed(1))
-            : 0;
+          // Dodaj
+          var total_kg  = parseFloat(e.total_kg_km) || 0;
+          var cu_pct    = (cu > 0 && total_kg > 0)
+            ? parseFloat((cu / total_kg * 100).toFixed(1)) : 0;
 
-          catalog[ctype].entries.push({
+          var entry = {
             product_id: pid,
-            cores,
-            cs,
-            cu,
-            total,
-            od:    parseFloat(e.outer_diameter) || 0,
-            cu_pct
-          });
+            cores:      cores,
+            cs:         cs,
+            cu:         cu,
+            total:      total_kg,
+            od:         parseFloat(e.outer_diameter) || 0,
+            cu_pct:     cu_pct
+          };
+          if (cuEst) entry.cu_est = true;
+
+          catalog[ctype].entries.push(entry);
           added++;
           totalExtracted++;
         }
 
-        const msg = `Strona ${p}: ${result.entries.length} wierszy → +${added} nowych` +
-          (skipped  > 0 ? `, ${skipped} duplikatów`  : '') +
-          (invalid  > 0 ? `, ${invalid} błędnych`    : '');
+        // Sortuj entries
+        catalog[ctype] && catalog[ctype].entries.sort(function(a, b) {
+          return a.cores !== b.cores ? a.cores - b.cores : a.cs - b.cs;
+        });
+
+        var msg = 'Strona ' + p + ': ' + result.entries.length + ' wierszy -> +' + added + ' nowych';
+        if (skipped > 0) msg += ', ' + skipped + ' duplikatow';
+        if (invalid > 0) msg += ', ' + invalid + ' blednych';
         logLine(msg, added > 0 ? 'ok' : 'warn');
 
       } else {
-        logLine(`Strona ${p}: brak tabel z danymi kabli`, 'warn');
+        logLine('Strona ' + p + ': brak tabel z danymi', 'warn');
       }
 
-    } catch(e) {
-      logLine(`Strona ${p}: BŁĄD — ${e.message}`, 'err');
-      // Poczekaj chwilę przy błędzie API
-      if (e.message.includes('rate') || e.message.includes('529')) {
-        logLine('Przekroczono limit — czekam 10s...', 'warn');
-        await sleep(10000);
-        p--; // Powtórz stronę
+    } catch(err) {
+      logLine('Strona ' + p + ': BLAD — ' + err.message, 'err');
+      if (err.message.indexOf('rate') >= 0 || err.message.indexOf('529') >= 0 || err.message.indexOf('overloaded') >= 0) {
+        logLine('Limit API — czekam 15s...', 'warn');
+        await sleep(15000);
+        p--;
         continue;
       }
     }
 
-    // Sortuj entries w każdym typie
-    Object.values(catalog).forEach(c => c.entries.sort((a,b) => a.cs - b.cs || a.cores - b.cores));
-
-    // Pauza między stronami żeby nie przekroczyć limitu API
-    if (p < endPage) await sleep(500);
     pagesProcessed++;
-
-    // Aktualizuj wyniki na bieżąco
     updateResults();
+    if (p < endPage) await sleep(400);
   }
 
   document.getElementById('progressFill').style.width = '100%';
-  document.getElementById('progressTxt').textContent = '✓ Gotowe! ' + totalExtracted + ' wpisów z ' + pagesCount + ' stron';
+  document.getElementById('progressTxt').textContent = '✓ Gotowe! ' + totalExtracted + ' wpisow z ' + pagesProcessed + ' stron';
   document.getElementById('startBtn').disabled = false;
-  logLine('=== KONIEC: ' + totalExtracted + ' wpisów, ' + Object.keys(catalog).length + ' typów kabli ===', 'ok');
+  logLine('=== KONIEC: ' + totalExtracted + ' wpisow, ' + Object.keys(catalog).filter(function(k) { return k !== '_meta'; }).length + ' typow kabli ===', 'ok');
   updateResults();
 }
 
-// ── Renderuj wyniki ────────────────────────────────────────────────────────────
+// ─── AKTUALIZUJ WYNIKI ────────────────────────────────────────────────────────
 function updateResults() {
-  const types   = Object.keys(catalog).filter(k => k !== '_meta');
-  const entries = types.reduce((s, k) => s + catalog[k].entries.length, 0);
+  var types = Object.keys(catalog).filter(function(k) { return k !== '_meta'; });
+  var entries = types.reduce(function(s, k) { return s + catalog[k].entries.length; }, 0);
   if (!entries) return;
 
   document.getElementById('resultsCard').style.display = 'block';
@@ -499,46 +503,45 @@ function updateResults() {
   document.getElementById('statTypes').textContent   = types.length;
   document.getElementById('statPages').textContent   = pagesProcessed;
 
-  const list = document.getElementById('entryList');
-  list.innerHTML = types.map(k => {
-    const cat = catalog[k];
-    return cat.entries.map(e => {
-      const hasCuPct = e.cu_pct > 0;
-      return `<div class="entry-row">
-        <span class="entry-type">${cat.name} ${e.cores}×${e.cs}</span>
-        <span class="entry-data">Cu: </span>
-        <span class="entry-cu">${e.cu} kg/km</span>
-        <span class="entry-data" style="margin-left:8px">Ø${e.od}mm</span>
-        <span class="tag ${hasCuPct ? 'tag-ok' : 'tag-warn'}">${hasCuPct ? e.cu_pct.toFixed(1)+'%' : 'brak %'}</span>
-      </div>`;
-    }).join('');
-  }).join('');
+  var html = '';
+  types.forEach(function(k) {
+    var cat = catalog[k];
+    cat.entries.forEach(function(e) {
+      var pctCls = e.cu_pct > 0 ? (e.cu_est ? 'pct-est' : 'pct-ok') : 'pct-miss';
+      var pctTxt = e.cu_pct > 0 ? e.cu_pct.toFixed(1) + '%' + (e.cu_est ? '*' : '') : '?';
+      html += '<div class="entry-row">' +
+        '<span class="entry-type">' + cat.name + ' ' + e.cores + 'x' + e.cs + '</span>' +
+        '<span style="color:var(--muted);font-size:11px">' + (e.product_id || '') + '</span>' +
+        '<span class="entry-cu">' + e.cu.toFixed(1) + ' kg/km</span>' +
+        '<span class="entry-pct ' + pctCls + '">' + pctTxt + '</span>' +
+        '</div>';
+    });
+  });
+  document.getElementById('entryList').innerHTML = html;
 
-  // Dodaj metadane
-  const finalCatalog = {
+  var finalCatalog = Object.assign({
     _meta: {
       version: '3.0',
-      source: document.getElementById('manufacturer').value.trim() || 'katalog producenta',
-      extracted: new Date().toISOString().slice(0,10),
-      tool: 'ekstraktor-kabli',
+      source: document.getElementById('manufacturer').value.trim() || 'katalog',
+      extracted: new Date().toISOString().slice(0, 10),
       entries_count: entries,
-      types_count: types.length
-    },
-    ...catalog
-  };
+      types_count: types.length,
+      note: 'cu_est:true = masa miedzi obliczona geometrycznie (brak w katalogu)'
+    }
+  }, catalog);
 
-  const json = JSON.stringify(finalCatalog, null, 2);
-  document.getElementById('jsonPreview').textContent = json.substring(0, 1500) + (json.length > 1500 ? '\n\n... (skrócono podgląd)' : '');
+  var json = JSON.stringify(finalCatalog, null, 2);
+  document.getElementById('jsonPreview').textContent = json.substring(0, 1500) + (json.length > 1500 ? '\n\n... (skrocono podglad)' : '');
   window._finalCatalog = finalCatalog;
 }
 
-// ── Pobierz / kopiuj JSON ──────────────────────────────────────────────────────
+// ─── POBIERZ / KOPIUJ ─────────────────────────────────────────────────────────
 function downloadJSON() {
   if (!window._finalCatalog) return;
-  const json = JSON.stringify(window._finalCatalog, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
+  var json = JSON.stringify(window._finalCatalog, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
   a.href = url; a.download = 'catalog.json'; a.click();
   URL.revokeObjectURL(url);
 }
@@ -546,19 +549,20 @@ function copyJSON() {
   if (!window._finalCatalog) return;
   navigator.clipboard.writeText(JSON.stringify(window._finalCatalog, null, 2));
   document.getElementById('jsonPreview').style.borderColor = 'var(--green)';
-  setTimeout(() => document.getElementById('jsonPreview').style.borderColor = '', 1500);
+  setTimeout(function() { document.getElementById('jsonPreview').style.borderColor = ''; }, 1500);
 }
 
-// ── Pomocniki ──────────────────────────────────────────────────────────────────
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+// ─── POMOCNIKI ────────────────────────────────────────────────────────────────
+function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
 function showErr(msg) {
-  const e = document.getElementById('errBox');
+  var e = document.getElementById('errBox');
   e.textContent = msg; e.style.display = msg ? 'block' : 'none';
 }
 function logLine(msg, type) {
-  const log = document.getElementById('log');
-  const cls = type === 'ok' ? 'log-ok' : type === 'err' ? 'log-err' : 'log-warn';
-  log.innerHTML += `<span class="${cls}">[${new Date().toLocaleTimeString('pl-PL')}] ${msg}</span>\n`;
+  var log = document.getElementById('log');
+  var cls = type === 'ok' ? 'log-ok' : type === 'err' ? 'log-err' : 'log-warn';
+  var time = new Date().toLocaleTimeString('pl-PL');
+  log.innerHTML += '<span class="' + cls + '">[' + time + '] ' + msg + '</span>\n';
   log.scrollTop = log.scrollHeight;
 }
 </script>
