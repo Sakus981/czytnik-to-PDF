@@ -235,23 +235,33 @@ async function extractFromPage(pageNum, b64, manufacturer) {
 
   const prompt = `Jesteś ekspertem od kabli elektrycznych. Analizujesz stronę ${pageNum} katalogu${manufacturer ? ' firmy ' + manufacturer : ''}.
 
-WAŻNE — tabele mogą mieć różne formaty kolumn:
-1. Kolumna "Liczba żył x przekrój" lub "NxS" np. "12 x 1,5" — rozbij na cores=12, cross_section=1.5
-2. Kolumna "Indeks miedziowy" lub "Copper content" lub "Cu index" — to jest cu_kg_km (kg/km miedzi)
-3. Kolumna "Masa kabla" lub "Total weight" lub "Gesamtgewicht" — to total_kg_km
-4. Kolumna "Średnica zewnętrzna" lub "Outer diameter" lub "OD" — to outer_diameter w mm
-5. Numer wyrobu / katalogowy — ignoruj, nie wyciągaj
+ZADANIE: Wyciągnij WSZYSTKIE wiersze z tabel z danymi technicznymi kabli.
 
-Wyciągnij typ kabla z nagłówka sekcji/tabeli lub opisu (np. "YKY", "NYM", "Nhxh", "LgY").
+KLUCZOWE — wyciągaj numer wyrobu (product_id):
+Każdy wiersz w katalogu ma unikalny numer wyrobu (np. "2005 058", "NH-1", "YKY-3x2.5-001").
+Ten numer jest GŁÓWNYM kluczem — jeśli go masz, duplikaty są niemożliwe.
 
-Dla każdego wiersza tabeli zwróć obiekt. Jeśli wartość nieczytelna lub brak — użyj null.
+FORMAT KOLUMN (różne katalogi różnie nazywają):
+- "Numer wyrobu" / "Nr wyrobu" / "Symbol" / "Oznaczenie" → product_id (string, wyciągaj dokładnie)
+- "Liczba żył x przekrój" / "NxS" / "n x s" np. "12 x 1,5" → rozbij: cores=12, cross_section=1.5
+  LUB osobne kolumny "Liczba żył"=cores i "Przekrój"=cross_section
+- "Indeks miedziowy" / "Copper content" / "Cu" / "masa Cu" → cu_kg_km [kg/km]
+- "Masa kabla" / "Total weight" / "masa całkowita" → total_kg_km [kg/km]
+- "Średnica zewnętrzna" / "Outer diameter" / "OD" / "śr. zew." → outer_diameter [mm]
 
-Jeśli strona nie ma tabel z danymi kabli — zwróć has_data: false i puste entries.
+TYP KABLA: wyciągnij z nagłówka sekcji/tabeli (np. "NHXH", "YKY", "NYM").
 
-Zwróć TYLKO JSON bez backticks:
-{"has_data":true,"cable_type_default":"YKY","entries":[{"cable_type":"YKY","cores":3,"cross_section":2.5,"cu_kg_km":67.2,"total_kg_km":155,"outer_diameter":11.4,"insulation_type":"PVC","has_filler":false,"is_stranded":false,"conductor":"Cu"}]}
+WAŻNE:
+- Wyciągaj KAŻDY wiersz osobno, nawet jeśli typ kabla jest tylko w nagłówku
+- Jeśli brak numeru wyrobu w tabeli — wygeneruj go jako cable_type + "_" + cores + "x" + cross_section
+- Wartości liczbowe: kropka jako separator dziesiętny (1,5 → 1.5)
+- Jeśli strona nie ma tabel z danymi → has_data: false
 
-cable_type_default to typ kabla widoczny w nagłówku strony/sekcji (użyj go gdy w wierszach brak nazwy).`;
+Zwróć TYLKO JSON bez backticks i bez komentarzy:
+{"has_data":true,"cable_type_default":"NHXH","entries":[
+{"product_id":"2005 058","cable_type":"NHXH","cores":12,"cross_section":1.5,"cu_kg_km":180.0,"total_kg_km":352,"outer_diameter":15.3,"insulation_type":"PVC","has_filler":false,"is_stranded":true,"conductor":"Cu"},
+{"product_id":"2005 009","cable_type":"NHXH","cores":14,"cross_section":1.5,"cu_kg_km":208.8,"total_kg_km":397,"outer_diameter":16.0,"insulation_type":"PVC","has_filler":false,"is_stranded":true,"conductor":"Cu"}
+]}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -367,50 +377,86 @@ async function startExtraction() {
       const b64    = await renderPageToBase64(p, 2.0);
       const result = await extractFromPage(p, b64, manufacturer);
 
-  if (result.has_data && result.entries && result.entries.length) {
-        let added = 0;
+      if (result.has_data && result.entries && result.entries.length) {
+        let added = 0, skipped = 0, invalid = 0;
         for (const e of result.entries) {
-          if (!e.cable_type || !e.cross_section || e.cross_section === null) continue;
-          if (e.cu_kg_km === null || e.cu_kg_km === undefined || e.cu_kg_km <= 0) continue;
-          if (!e.cores || e.cores === null || e.cores <= 0) continue;
-          const ctype = e.cable_type.toUpperCase().replace(/[^A-Z0-9]/g,'');
+
+          // ── Walidacja danych ──────────────────────────────────────────────
+          if (!e.cable_type) { invalid++; continue; }
+          const cs    = parseFloat(e.cross_section);
+          const cores = parseInt(e.cores);
+          const cu    = parseFloat(e.cu_kg_km);
+          if (!cs || isNaN(cs) || cs <= 0)    { invalid++; continue; }
+          if (!cores || isNaN(cores) || cores <= 0) { invalid++; continue; }
+          if (!cu || isNaN(cu) || cu <= 0)    { invalid++; continue; }
+
+          // ── Normalizuj klucz typu kabla ───────────────────────────────────
+          // Bierz pierwsze słowo z nazwy: "NHXH-J 3x2.5" → "NHXH"
+          const ctype = e.cable_type.trim().toUpperCase()
+            .replace(/[ŻŹÓĄĘŚĆŃŁżźóąęśćńł]/g, '')
+            .split(/[\s\-\/\.]/)[0]
+            .replace(/[^A-Z0-9]/g, '')
+            .substring(0, 12) || 'UNKNOWN';
+
+          // ── Utwórz grupę katalogu jeśli nie istnieje ──────────────────────
           if (!catalog[ctype]) {
             catalog[ctype] = {
-              name: e.cable_type,
-              full: e.cable_type,
-              desc: '',
+              name:       ctype,
+              full:       e.cable_type,
+              desc:       '',
               insulation: e.insulation_type || 'PVC',
-              filler: !!e.has_filler,
-              stranded: !!e.is_stranded,
-              conductor: e.conductor || 'Cu',
-              source: manufacturer || 'katalog',
-              entries: []
-
+              filler:     !!e.has_filler,
+              stranded:   !!e.is_stranded,
+              conductor:  e.conductor || 'Cu',
+              source:     manufacturer || 'katalog',
+              entries:    []
             };
           }
-          // Sprawdź duplikaty (ten sam cores + cs)
-         const exists = catalog[ctype].entries.find(x =>
-            x.cores === e.cores && Math.abs(x.cs - e.cross_section) < 0.01
-          );
-          if (!exists) {
-            const cu_pct = (e.cu_kg_km > 0 && e.total_kg_km > 0)
-              ? parseFloat((e.cu_kg_km / e.total_kg_km * 100).toFixed(1))
-              : 0;
-            catalog[ctype].entries.push({
-              cores: e.cores,
-              cs:    e.cross_section,
-              cu:    e.cu_kg_km,
-              total: e.total_kg_km || 0,
-              od:    e.outer_diameter || 0,
-              cu_pct
-            });
-            added++;
-            totalExtracted++;
+
+          // ── Generuj product_id jeśli brak ─────────────────────────────────
+          const pid = (e.product_id || '').toString().trim()
+            || (ctype + '_' + cores + 'x' + cs);
+
+          // ── DEDUPLIKACJA po product_id (główna) ───────────────────────────
+          const dupById = catalog[ctype].entries.find(x => x.product_id === pid);
+          if (dupById) { skipped++; continue; }
+
+          // ── DEDUPLIKACJA po cores+cs (zabezpieczenie) ─────────────────────
+          // Tylko gdy product_id był wygenerowany (nie z katalogu)
+          const isGenId = !e.product_id;
+          if (isGenId) {
+            const dupByCs = catalog[ctype].entries.find(x =>
+              x.cores === cores && Math.abs(x.cs - cs) < cs * 0.02 + 0.05
+            );
+            if (dupByCs) { skipped++; continue; }
           }
+
+          // ── Dodaj wpis ────────────────────────────────────────────────────
+          const total  = parseFloat(e.total_kg_km) || 0;
+          const cu_pct = (cu > 0 && total > 0)
+            ? parseFloat((cu / total * 100).toFixed(1))
+            : 0;
+
+          catalog[ctype].entries.push({
+            product_id: pid,
+            cores,
+            cs,
+            cu,
+            total,
+            od:    parseFloat(e.outer_diameter) || 0,
+            cu_pct
+          });
+          added++;
+          totalExtracted++;
         }
-        logLine(`Strona ${p}: znaleziono ${result.entries.length} wpisów (+${added} nowych)`, 'ok');
+
+        const msg = `Strona ${p}: ${result.entries.length} wierszy → +${added} nowych` +
+          (skipped  > 0 ? `, ${skipped} duplikatów`  : '') +
+          (invalid  > 0 ? `, ${invalid} błędnych`    : '');
+        logLine(msg, added > 0 ? 'ok' : 'warn');
+
       } else {
-        logLine(`Strona ${p}: brak tabel`, 'warn');
+        logLine(`Strona ${p}: brak tabel z danymi kabli`, 'warn');
       }
 
     } catch(e) {
@@ -419,6 +465,8 @@ async function startExtraction() {
       if (e.message.includes('rate') || e.message.includes('529')) {
         logLine('Przekroczono limit — czekam 10s...', 'warn');
         await sleep(10000);
+        p--; // Powtórz stronę
+        continue;
       }
     }
 
